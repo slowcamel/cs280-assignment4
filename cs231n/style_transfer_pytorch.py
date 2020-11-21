@@ -26,7 +26,9 @@ def content_loss(content_weight, content_current, content_original):
     """
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    L = content_weight * torch.sum((content_original - content_current).pow(2)).item()
+
+    return L
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -46,7 +48,13 @@ def gram_matrix(features, normalize=True):
     """
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, C, H, W = features.shape
+    f = features.reshape(N, C, H*W)
+    gram =  torch.bmm(f, f.permute(0,2,1))
+    if normalize:
+      gram = gram / (H*W*C)
+    
+    return gram
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -73,7 +81,16 @@ def style_loss(feats, style_layers, style_targets, style_weights):
     # not be very much code (~5 lines). You will need to use your gram_matrix function.
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    loss = torch.Tensor([0])
+    # gram = gram_matrix(np.array(feats)[style_layers])
+    # print(style_targets[style_layers[0]].shape)
+    # print(feats[style_layers[1]].shape)
+    for i in range(len(style_layers)):
+      idx = style_layers[i]
+      gram = gram_matrix(feats[idx])
+      loss += content_loss(style_weights[i], gram, style_targets[i])
+    
+    return loss
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -92,7 +109,13 @@ def tv_loss(img, tv_weight):
     # Your implementation should be vectorized and not require any loops!
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    _,_,H,W = img.shape
+    resort_h = np.insert(np.arange(H-1), 0, 0)
+    resort_w = np.insert(np.arange(W-1), 0, 0)
+    loss = torch.sum((img - img[:, :, resort_h, :]).pow(2))
+    loss += torch.sum((img - img[:, :, :, resort_w]).pow(2))
+
+    return tv_weight * loss
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 def preprocess(img, size=512):
